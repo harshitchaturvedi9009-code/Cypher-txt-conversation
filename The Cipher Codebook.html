@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>The Cipher Codebook</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=Special+Elite&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --paper: #eadfc6;
+      --sheet: #f3ead4;
+      --ink: #1f2433;
+      --faint: #6b6350;
+      --rule: #b9ab87;
+      --stamp: #8c2a22;
+      --type: #2b2f3a;
+      box-sizing: border-box;
+      padding-top: env(safe-area-inset-top, 0px);
+      padding-bottom: env(safe-area-inset-bottom, 0px)
+    }
+
+    @media (prefers-color-scheme:dark) {
+      :root:not([data-theme="light"]) {
+        --paper: #1c1a16;
+        --sheet: #26231d;
+        --ink: #e8dcc0;
+        --faint: #a39878;
+        --rule: #4a4334;
+        --stamp: #d4685d;
+        --type: #e8dcc0
+      }
+    }
+
+    :root[data-theme="dark"] {
+      --paper: #1c1a16;
+      --sheet: #26231d;
+      --ink: #e8dcc0;
+      --faint: #a39878;
+      --rule: #4a4334;
+      --stamp: #d4685d;
+      --type: #e8dcc0
+    }
+
+    * {
+      box-sizing: border-box
+    }
+
+    html {
+      scroll-padding-top: env(safe-area-inset-top, 0px)
+    }
+
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font: 19px/1.55 "EB Garamond", Georgia, "Times New Roman", serif
+    }
+
+    .page {
+      max-width: 820px;
+      margin: 0 auto;
+      padding: 30px 20px 60px
+    }
+
+    header {
+      text-align: center;
+      border-top: 4px double var(--ink);
+      border-bottom: 4px double var(--ink);
+      padding: 18px 8px 16px;
+      margin-bottom: 26px;
+      position: relative
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(2.1rem, 7vw, 3.4rem);
+      font-weight: 600;
+      letter-spacing: .01em;
+      line-height: 1.1
+    }
+
+    .sub {
+      margin: 6px 0 0;
+      font-style: italic;
+      color: var(--faint)
+    }
+
+    .stamp {
+      position: absolute;
+      right: 6px;
+      top: -14px;
+      transform: rotate(8deg);
+      border: 2px solid var(--stamp);
+      color: var(--stamp);
+      padding: 2px 10px;
+      font-family: "Special Elite", monospace;
+      font-size: .85rem;
+      background: var(--paper);
+      opacity: .9
+    }
+
+    @media(max-width:560px) {
+      .stamp {
+        display: none
+      }
+    }
+
+    h2 {
+      font-size: 1.15rem;
+      margin: 0 0 8px;
+      font-weight: 600;
+      font-style: italic
+    }
+
+    .chapters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 22px;
+      margin: 0 0 20px;
+      padding: 0 0 10px;
+      border-bottom: 1px solid var(--rule)
+    }
+
+    .chapters button {
+      background: none;
+      border: 0;
+      border-bottom: 2px solid transparent;
+      color: var(--faint);
+      font: inherit;
+      font-size: 1.05rem;
+      padding: 2px 0;
+      cursor: pointer
+    }
+
+    .chapters button[aria-pressed="true"] {
+      color: var(--ink);
+      border-bottom-color: var(--stamp);
+      font-weight: 600
+    }
+
+    .settings {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px 22px;
+      align-items: flex-end;
+      margin-bottom: 20px
+    }
+
+    .settings label {
+      display: flex;
+      flex-direction: column;
+      font-size: .95rem;
+      color: var(--faint)
+    }
+
+    .settings input {
+      font: inherit;
+      font-family: "Special Elite", monospace;
+      font-size: .95rem;
+      background: var(--sheet);
+      color: var(--ink);
+      border: 1px solid var(--rule);
+      padding: 5px 8px;
+      width: 170px
+    }
+
+    .mode button {
+      font: inherit;
+      background: var(--sheet);
+      color: var(--faint);
+      border: 1px solid var(--ink);
+      padding: 5px 16px;
+      cursor: pointer
+    }
+
+    .mode button+button {
+      border-left: 0
+    }
+
+    .mode button[aria-pressed="true"] {
+      background: var(--ink);
+      color: var(--paper)
+    }
+
+    .sheets {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px
+    }
+
+    @media(max-width:700px) {
+      .sheets {
+        grid-template-columns: 1fr
+      }
+    }
+
+    .sheet {
+      background: var(--sheet);
+      border: 1px solid var(--ink);
+      padding: 12px 14px 14px;
+      box-shadow: 3px 3px 0 var(--rule)
+    }
+
+    textarea,
+    .out {
+      display: block;
+      width: 100%;
+      min-height: 190px;
+      border: 0;
+      outline: 0;
+      resize: vertical;
+      margin: 0;
+      padding: 0;
+      font-family: "Special Elite", "Courier New", monospace;
+      font-size: .98rem;
+      line-height: 28px;
+      color: var(--type);
+      background: transparent;
+      background-image: repeating-linear-gradient(transparent 0 27px, var(--rule) 27px 28px);
+      background-attachment: local;
+      overflow-wrap: anywhere;
+      white-space: p3333re-wrap
+    }
+
+    .out.err {
+      color: var(--stamp)
+    }
+
+    .head {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline
+    }
+
+    .copy {
+      font: inherit;
+      font-size: .9rem;
+      background: none;
+      border: 0;
+      border-bottom: 1px dotted var(--ink);
+      color: var(--ink);
+      cursor: pointer;
+      padding: 0
+    }
+
+    :focus-visible {
+      outline: 2px solid var(--stamp);
+      outline-offset: 2px
+    }
+
+    .notes {
+      margin-top: 34px;
+      display: grid;
+      grid-template-columns: 1fr 250px;
+      gap: 26px;
+      align-items: start;
+      border-top: 1px solid var(--rule);
+      padding-top: 20px
+    }
+
+    @media(max-width:700px) {
+      .notes {
+        grid-template-columns: 1fr
+      }
+    }
+
+    .notes p {
+      margin: 0 0 10px
+    }
+
+    .rating {
+      font-style: italic;
+      color: var(--stamp)
+    }
+
+    #wheelBox svg {
+      width: 100%;
+      max-width: 250px;
+      display: block;
+      margin: 0 auto
+    }
+
+    #wheelBox text {
+      font-family: "Special Elite", monospace;
+      font-size: 13px;
+      fill: var(--ink);
+      text-anchor: middle;
+      dominant-baseline: middle
+    }
+
+    #inner {
+      transform-origin: 150px 150px;
+      transition: transform .5s cubic-bezier(.3, .7, .3, 1)
+    }
+
+    #inner text {
+      fill: var(--stamp)
+    }
+
+    .map {
+      overflow-x: auto
+    }
+
+    .map table {
+      border-collapse: collapse;
+      font-family: "Special Elite", monospace;
+      font-size: .72rem
+    }
+
+    .map td {
+      border: 1px solid var(--rule);
+      padding: 1px 4px;
+      text-align: center
+    }
+
+    .gloss {
+      margin-top: 30px;
+      border-top: 4px double var(--ink);
+      padding-top: 14px
+    }
+
+    dl {
+      margin: 0;
+      display: grid;
+      grid-template-columns: max-content 1fr;
+      gap: 4px 16px
+    }
+
+    dt {
+      font-weight: 600
+    }
+
+    dd {
+      margin: 0;
+      color: var(--faint)
+    }
+
+    @media(max-width:560px) {
+      dl {
+        grid-template-columns: 1fr
+      }
+    }
+
+    footer {
+      margin-top: 26px;
+      text-align: center;
+      font-style: italic;
+      color: var(--faint);
+      font-size: .9rem
+    }
+
+    @media(prefers-reduced-motion:reduce) {
+      #inner {
+        transition: none
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="page">
+    <header>
+      <span class="stamp">CONFIDENTIAL</span>
+      <h1>The Cipher Codebook</h1>
+      <p class="sub">A small workbook for turning plain text into ciphertext, and back again</p>
+    </header>
+
+    <div class="chapters" id="tabs" role="group" aria-label="Choose a cipher"></div>
+
+    <div class="settings">
+      <div class="mode" role="group" aria-label="Mode"><button id="mEnc" aria-pressed="true">Encrypt</button><button
+          id="mDec" aria-pressed="false">Decrypt</button></div>
+      <label id="shiftBox">Shift (1 to 25)<input id="shift" type="number" min="1" max="25" value="3"></label>
+      <label id="keyBox"><span id="keyLbl">Key</span><input id="key" type="text" value="CYBER"
+          autocomplete="off"></label>
+    </div>
+
+    <div class="sheets">
+      <div class="sheet">
+        <div class="head">
+          <h2 id="inLabel">Plaintext</h2>
+        </div>
+        <textarea id="input" spellcheck="false" aria-labelledby="inLabel">Attack at dawn. Meet at Gate 7.</textarea>
+      </div>
+      <div class="sheet">
+        <div class="head">
+          <h2 id="outLabel">Ciphertext</h2><button class="copy" id="copy">copy</button>
+        </div>
+        <div class="out" id="output" aria-live="polite"></div>
+      </div>
+    </div>
+
+    <div class="notes">
+      <div>
+        <h2 id="cName"></h2>
+        <p id="cDesc"></p>
+        <p class="rating" id="cStr"></p>
+        <div class="map" id="map"></div>
+      </div>
+      <div id="wheelBox"></div>
+    </div>
+
+    <div class="gloss">
+      <h2>Glossary</h2>
+      <dl>
+        <dt>Plaintext</dt>
+        <dd>The original, readable message.</dd>
+        <dt>Ciphertext</dt>
+        <dd>The scrambled message after encryption.</dd>
+        <dt>Key</dt>
+        <dd>The secret value that decides how the message is scrambled.</dd>
+        <dt>Encoding</dt>
+        <dd>A change of format (like Base64) that gives no secrecy at all.</dd>
+      </dl>
+    </div>
+    <footer>Made for a Cryptography assignment. The old ciphers are for learning; real data needs AES.</footer>
+  </div>
+
+  <script>
+    const A = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    const enc = new TextEncoder(), dec = new TextDecoder();
+    const b64 = u => btoa(String.fromCharCode(...u));
+    const unb64 = s => Uint8Array.from(atob(s.trim()), c => c.charCodeAt(0));
+    function shiftChar(c, n) {
+      const up = c >= "A" && c <= "Z", lo = c >= "a" && c <= "z";
+      if (!up && !lo) return c;
+      const base = up ? 65 : 97;
+      return String.fromCharCode((c.charCodeAt(0) - base + n + 260) % 26 + base);
+    }
+    const caesar = (t, n) => [...t].map(c => shiftChar(c, n)).join("");
+    function vig(t, k, d) {
+      const ks = [...k.toUpperCase()].filter(c => A.includes(c));
+      if (!ks.length) throw new Error("Key me kam se kam ek letter (A-Z) chahiye.");
+      let i = 0;
+      return [...t].map(c => /[a-z]/i.test(c) ? shiftChar(c, (d ? -1 : 1) * (ks[i++ % ks.length].charCodeAt(0) - 65)) : c).join("");
+    }
+    const atbash = t => [...t].map(c => { const up = c >= "A" && c <= "Z", lo = c >= "a" && c <= "z"; if (!up && !lo) return c; const b = up ? 65 : 97; return String.fromCharCode(b + 25 - (c.charCodeAt(0) - b)) }).join("");
+    function xor(bytes, k) {
+      const kb = enc.encode(k); if (!kb.length) throw new Error("Key khali hai.");
+      return bytes.map((b, i) => b ^ kb[i % kb.length]);
+    }
+    async function aesKey(pw, salt, use) {
+      const base = await crypto.subtle.importKey("raw", enc.encode(pw), "PBKDF2", false, ["deriveKey"]);
+      return crypto.subtle.deriveKey({ name: "PBKDF2", salt, iterations: 100000, hash: "SHA-256" }, base, { name: "AES-GCM", length: 256 }, false, [use]);
+    }
+    const C = {
+      caesar: {
+        n: "Caesar", needs: "shift", s: "Strength: weak", d: "Har letter ko alphabet me fixed shift se aage bhejta hai. Julius Caesar ye use karte the. Sirf 25 possible keys hain, isliye brute force se turant toot jata hai.",
+        run: (t, e, o) => caesar(t, e ? o.shift : -o.shift)
+      },
+      vigenere: {
+        n: "Vigenère", needs: "key", s: "Strength: weak to medium", d: "Keyword ke har letter se alag shift lagata hai, isliye frequency analysis mushkil hota hai. Phir bhi Kasiski test se toot jata hai.",
+        run: (t, e, o) => vig(t, o.key, !e)
+      },
+      atbash: {
+        n: "Atbash", needs: null, s: "Strength: weak", d: "A se Z, B se Y, C se X. Alphabet ko ulta kar deta hai. Koi key nahi hoti, isliye security sirf algorithm chhupane par hai.",
+        run: t => atbash(t)
+      },
+      xor: {
+        n: "XOR", needs: "key", s: "Strength: medium", d: "Message ke bytes ko key ke bytes se XOR karta hai (output hex me). Key message jitni lambi aur random ho to one-time pad ban jata hai, jo unbreakable hai.",
+        run: (t, e, o) => {
+          if (e) return [...xor([...enc.encode(t)], o.key)].map(b => b.toString(16).padStart(2, "0")).join(" ");
+          const h = t.replace(/\s+/g, "");
+          if (!/^([0-9a-f]{2})+$/i.test(h)) throw new Error("Decrypt ke liye valid hex ciphertext paste karo.");
+          return dec.decode(Uint8Array.from(xor(h.match(/../g).map(x => parseInt(x, 16)), o.key)));
+        }
+      },
+      base64: {
+        n: "Base64", needs: null, s: "Encoding only, no secrecy", d: "Ye encryption nahi, sirf encoding hai. Koi bhi isko decode kar sakta hai. Isse samajh aata hai ki encoding aur encryption alag cheezein hain.",
+        run: (t, e) => e ? b64(enc.encode(t)) : dec.decode(unb64(t))
+      },
+      aes: {
+        n: "AES-256-GCM", needs: "key", s: "Strength: strong", d: "Modern standard. Password se PBKDF2 (100,000 rounds) ke through 256-bit key banti hai, random salt aur IV lagte hain, aur GCM tampering bhi detect karta hai. Browser ka Web Crypto API use hota hai.",
+        run: async (t, e, o) => {
+          if (!o.key) throw new Error("Password khali hai.");
+          if (e) {
+            const salt = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12));
+            const ct = new Uint8Array(await crypto.subtle.encrypt({ name: "AES-GCM", iv }, await aesKey(o.key, salt, "encrypt"), enc.encode(t)));
+            return b64(new Uint8Array([...salt, ...iv, ...ct]));
+          }
+          try {
+            const all = unb64(t), salt = all.slice(0, 16), iv = all.slice(16, 28), ct = all.slice(28);
+            return dec.decode(await crypto.subtle.decrypt({ name: "AES-GCM", iv }, await aesKey(o.key, salt, "decrypt"), ct));
+          } catch { throw new Error("Decrypt fail: galat password ya ciphertext badla hua hai.") }
+        }
+      }
+    };
+    let cur = "caesar", encMode = true;
+    const $ = id => document.getElementById(id);
+    Object.keys(C).forEach(k => {
+      const b = document.createElement("button"); b.textContent = C[k].n; b.dataset.k = k;
+      b.onclick = () => { cur = k; update() }; $("tabs").appendChild(b);
+    });
+
+    /* Cipher wheel (Caesar) */
+    function buildWheel() {
+      const NS = "http://www.w3.org/2000/svg";
+      let h = '<svg viewBox="0 0 300 300" role="img" aria-label="Cipher wheel"><circle cx="150" cy="150" r="146" fill="none" stroke="var(--ink)" stroke-width="2"/><circle cx="150" cy="150" r="118" fill="none" stroke="var(--ink)"/><circle cx="150" cy="150" r="84" fill="none" stroke="var(--ink)" stroke-width="2"/>';
+      for (let i = 0; i < 26; i++)h += `<text x="150" y="26" transform="rotate(${i * 360 / 26} 150 150)">${A[i]}</text>`;
+      h += '<g id="inner">';
+      for (let i = 0; i < 26; i++)h += `<text x="150" y="62" transform="rotate(${i * 360 / 26} 150 150)">${A[i]}</text>`;
+      h += '</g></svg>';
+      $("wheelBox").innerHTML = h;
+    }
+    buildWheel();
+    function turnWheel() {
+      const n = Math.min(25, Math.max(1, +$("shift").value || 0));
+      $("inner").style.transform = `rotate(${-n * 360 / 26}deg)`;
+    }
+    function drawMap() {
+      const m = $("map");
+      if (cur === "atbash") {
+        const row = f => "<tr>" + [...A].map((c, i) => "<td>" + f(c, i) + "</td>").join("") + "</tr>";
+        m.innerHTML = "<table>" + row(c => c) + row((c, i) => A[25 - i]) + "</table>";
+      } else m.innerHTML = "";
+    }
+    async function run() {
+      const o = { shift: Math.min(25, Math.max(1, +$("shift").value || 3)), key: $("key").value };
+      const out = $("output"); out.className = "out";
+      const text = $("input").value;
+      
+      // Try backend first if reachable, otherwise seamlessly use client-side logic
+      try {
+        const resp = await fetch("/api/transform", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            cipher: cur,
+            mode: encMode ? "encrypt" : "decrypt",
+            text: text,
+            shift: o.shift,
+            key: o.key
+          })
+        });
+        if (resp.ok) {
+          const data = await resp.json();
+          if (data.success) {
+            out.textContent = data.result;
+            return;
+          } else {
+            throw new Error(data.error || "Backend processing error");
+          }
+        }
+      } catch (err) {
+        // If server is not responding (e.g. running from local file:// or server offline), fallback to client-side
+        console.warn("Backend unavailable or error, falling back to browser crypto:", err.message);
+      }
+
+      // Local fallback
+      try { out.textContent = await C[cur].run(text, encMode, o) }
+      catch (e) { out.className = "out err"; out.textContent = e.message }
+    }
+    function update() {
+      const c = C[cur];
+      document.querySelectorAll("#tabs button").forEach(b => b.setAttribute("aria-pressed", b.dataset.k === cur));
+      $("shiftBox").style.display = c.needs === "shift" ? "" : "none";
+      $("keyBox").style.display = c.needs === "key" ? "" : "none";
+      $("keyLbl").textContent = cur === "aes" ? "Password" : "Key";
+      $("cName").textContent = c.n; $("cDesc").textContent = c.d; $("cStr").textContent = c.s;
+      $("wheelBox").style.display = cur === "caesar" ? "" : "none";
+      $("inLabel").textContent = encMode ? "Plaintext" : "Ciphertext";
+      $("outLabel").textContent = encMode ? "Ciphertext" : "Plaintext";
+      $("mEnc").setAttribute("aria-pressed", encMode); $("mDec").setAttribute("aria-pressed", !encMode);
+      drawMap(); turnWheel(); run();
+    }
+    function swap() { const t = $("output").textContent; if (!$("output").classList.contains("err") && t) $("input").value = t }
+    $("mEnc").onclick = () => { if (!encMode) { swap(); encMode = true; update() } };
+    $("mDec").onclick = () => { if (encMode) { swap(); encMode = false; update() } };
+    ["input", "key", "shift"].forEach(id => $(id).addEventListener("input", () => { turnWheel(); run() }));
+    $("copy").onclick = async () => {
+      try { await navigator.clipboard.writeText($("output").textContent); $("copy").textContent = "copied"; setTimeout(() => $("copy").textContent = "copy", 1200) }
+      catch { $("copy").textContent = "select and copy" }
+    };
+    update();
+  </script>
+</body>
+
+</html>
